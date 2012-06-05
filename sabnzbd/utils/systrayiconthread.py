@@ -144,7 +144,11 @@ class SysTrayIconThread(Thread):
                           win32con.WM_USER+20,
                           hicon,
                           self.hover_text)
-        win32gui.Shell_NotifyIcon(message, self.notify_id)
+        try:
+            win32gui.Shell_NotifyIcon(message, self.notify_id)
+        except:
+            # Timeouts can occur after system comes out of standby/hibernate
+            pass
 
     def restart(self, hwnd, msg, wparam, lparam):
         self.refresh_icon()

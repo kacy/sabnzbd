@@ -1006,7 +1006,10 @@ class NzbObject(TryList):
 
     def add_parfile(self, parfile):
         self.files.append(parfile)
-        parfile.extrapars.remove(parfile)
+        if parfile.extrapars:
+            parfile.extrapars.remove(parfile)
+        else:
+            logging.debug('PARFILE without EXTRAPARS %s', parfile.filename or parfile.subject)
 
     def remove_parset(self, setname):
         self.partable.pop(setname)
@@ -1019,17 +1022,22 @@ class NzbObject(TryList):
         need = 0L
         pars = 0L
         short = 0L
+        anypars = False
         for nzf_id in self.files_table:
             nzf = self.files_table[nzf_id]
             assert isinstance(nzf, NzbFile)
             short += nzf.bytes_left
             if self.__re_quick_par2_check.search(nzf.subject):
                 pars += nzf.bytes
+                anypars = True
             else:
                 need += nzf.bytes
         have = need + pars - short
         ratio = float(have) / float(max(1, need))
-        enough = ratio * 100.0 >= float(cfg.req_completion_rate())
+        if anypars:
+            enough = ratio * 100.0 >= float(cfg.req_completion_rate())
+        else:
+            enough = have >= need
         logging.debug('Download Quality: enough=%s, have=%s, need=%s, ratio=%s', enough, have, need, ratio)
         return enough, ratio
 
